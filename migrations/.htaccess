@@ -1,0 +1,12 @@
+# Migration scripts run ALTER/CREATE TABLE statements directly against the database and are
+# meant to be run once from the command line (php migrations/00X_name.php), never over HTTP —
+# without this, anyone could trigger them just by requesting their URL.
+# Dual syntax (2.4 / legacy 2.2) so this degrades safely rather than 500-ing if a module
+# isn't loaded on a given host — see the root .htaccess for the same note.
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+</IfModule>

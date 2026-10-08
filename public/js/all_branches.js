@@ -3,7 +3,7 @@
  * and the Create Branch modal (which also creates the Branch Manager account).
  */
 
-const COLS = 8;
+const COLS = 9;
 const branchState = { rows: [] };
 
 // ---------------- Table ----------------
@@ -12,19 +12,21 @@ async function loadBranches() {
     const tbody = el('branchesBody');
     renderSkeletonRows(tbody, COLS, 3);
     try {
-        const meta = await Api.getMeta();
-        const perfById = new Map(meta.data.performance.map((p) => [p.id, p]));
-        branchState.rows = meta.data.branches.map((b) => {
-            const perf = perfById.get(b.id) || { student_count: 0, collected: 0, pending: 0 };
-            const collected = Number(perf.collected);
-            const pending = Number(perf.pending);
+        // The management table needs every branch regardless of status (so a deactivated one
+        // can still be found and reactivated), unlike api/get_meta.php's branch list, which is
+        // Active-only and feeds dropdowns elsewhere.
+        const res = await Api.getAllBranches();
+        branchState.rows = res.data.branches.map((b) => {
+            const collected = Number(b.collected);
+            const pending = Number(b.pending);
             const total = collected + pending;
             return {
                 id: b.id,
                 name: b.name,
                 manager: b.manager_name,
                 location: b.location,
-                students: Number(perf.student_count),
+                status: b.status,
+                students: Number(b.student_count),
                 collected,
                 pending,
                 pct: total > 0 ? Math.round((collected / total) * 100) : 0,
@@ -65,11 +67,21 @@ function renderBranches() {
                 </div>
             </td>
             <td class="px-4 py-3 text-center">
+                <span class="px-2 py-1 rounded-full text-xs font-semibold ${r.status === 'Active' ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'}">${escapeHtml(r.status)}</span>
+            </td>
+            <td class="px-4 py-3 text-center">
                 <div class="flex flex-wrap items-center justify-center gap-1.5">
                     <button type="button" data-manager-id="${r.id}" data-manager-name="${escapeHtml(r.name)}"
                             class="text-xs font-semibold text-gray-700 border border-gray-300 rounded-lg px-2.5 py-2 whitespace-nowrap hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500">View Manager</button>
+                    <button type="button" data-reassign-id="${r.id}" data-reassign-name="${escapeHtml(r.name)}" data-reassign-manager="${escapeHtml(r.manager)}"
+                            class="text-xs font-semibold text-gray-700 border border-gray-300 rounded-lg px-2.5 py-2 whitespace-nowrap hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500">Change Admin</button>
                     <button type="button" data-open-id="${r.id}"
                             class="text-xs font-semibold bg-red-600 hover:bg-red-700 text-white rounded-lg px-3 py-2 whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500">Open Branch</button>
+                    ${r.status === 'Active'
+                        ? `<button type="button" data-deactivate-id="${r.id}" data-deactivate-name="${escapeHtml(r.name)}"
+                                class="text-xs font-semibold text-red-600 border border-red-200 rounded-lg px-2.5 py-2 whitespace-nowrap hover:bg-red-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500">Delete Branch</button>`
+                        : `<button type="button" data-activate-id="${r.id}" data-activate-name="${escapeHtml(r.name)}"
+                                class="text-xs font-semibold text-green-700 border border-green-200 rounded-lg px-2.5 py-2 whitespace-nowrap hover:bg-green-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500">Reactivate</button>`}
                 </div>
             </td>
         </tr>
@@ -81,6 +93,32 @@ function renderBranches() {
     tbody.querySelectorAll('[data-manager-id]').forEach((btn) => {
         btn.addEventListener('click', () => openManagerModal(Number(btn.dataset.managerId), btn.dataset.managerName));
     });
+    tbody.querySelectorAll('[data-reassign-id]').forEach((btn) => {
+        btn.addEventListener('click', () => openReassignModal(Number(btn.dataset.reassignId), btn.dataset.reassignName, btn.dataset.reassignManager));
+    });
+    tbody.querySelectorAll('[data-deactivate-id]').forEach((btn) => {
+        btn.addEventListener('click', () => changeBranchStatus(Number(btn.dataset.deactivateId), btn.dataset.deactivateName, 'Inactive'));
+    });
+    tbody.querySelectorAll('[data-activate-id]').forEach((btn) => {
+        btn.addEventListener('click', () => changeBranchStatus(Number(btn.dataset.activateId), btn.dataset.activateName, 'Active'));
+    });
+}
+
+// ---------------- Delete / reactivate branch ----------------
+
+async function changeBranchStatus(id, name, status) {
+    const verb = status === 'Inactive' ? 'delete' : 'reactivate';
+    const warning = status === 'Inactive'
+        ? `Are you sure you want to delete "${name}"? This deactivates the branch — it will disappear from active branch lists and its manager will no longer be able to log in. Existing students, courses and payment history are kept and are not affected.`
+        : `Are you sure you want to reactivate "${name}"? It will reappear in active branch lists and its manager will be able to log in again.`;
+    if (!confirm(warning)) return;
+    try {
+        await Api.setBranchStatus(id, status);
+        showToast(`Branch ${verb}d.`, 'success');
+        await loadBranches();
+    } catch (err) {
+        showToast('Could not change branch status: ' + err.message, 'error');
+    }
 }
 
 // ---------------- Branch Manager modal ----------------
@@ -239,5 +277,105 @@ el('searchInput').addEventListener('input', debounce(renderBranches, 200));
 if (new URLSearchParams(window.location.search).get('new') === '1') {
     openBranchModal();
 }
+
+// ---------------- Change Branch Admin modal ----------------
+
+const reassignForm = el('reassignForm');
+const reassignSubmitBtn = el('reassignSubmitBtn');
+let reassignBranchId = null;
+
+function closeReassignModal() {
+    if (reassignSubmitBtn.disabled) return;
+    el('reassignModal').classList.add('hidden');
+    clearReassignErrors();
+    reassignForm.reset();
+}
+
+function clearReassignErrors() {
+    el('reassignError').classList.add('hidden');
+    reassignForm.querySelectorAll('[data-error-for]').forEach((p) => {
+        p.classList.add('hidden');
+        p.textContent = '';
+    });
+    reassignForm.querySelectorAll('input').forEach((i) => i.removeAttribute('aria-invalid'));
+}
+
+function showReassignFieldError(field, message) {
+    const input = reassignForm.elements[field];
+    const p = reassignForm.querySelector(`[data-error-for="${field}"]`);
+    if (input) input.setAttribute('aria-invalid', 'true');
+    if (p) {
+        p.textContent = message;
+        p.classList.remove('hidden');
+    }
+}
+
+function openReassignModal(branchId, branchName, currentManager) {
+    reassignBranchId = branchId;
+    el('reassignBranchName').textContent = branchName;
+    el('reassignCurrentManager').textContent = currentManager || 'No Branch Manager Assigned';
+    clearReassignErrors();
+    reassignForm.reset();
+    el('reassignModal').classList.remove('hidden');
+    el('reassignManagerName').focus();
+}
+
+function validateReassignForm(values) {
+    let valid = true;
+    const checks = [
+        ['manager_name', values.manager_name.length > 0 && values.manager_name.length <= 100, 'Manager name is required.'],
+        ['manager_email', /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.manager_email) && values.manager_email.length <= 100, 'Enter a valid email address.'],
+        ['manager_password', values.manager_password.length >= 10 && values.manager_password.length <= 72, 'Password must be 10 to 72 characters.'],
+    ];
+    checks.forEach(([field, ok, message]) => {
+        if (!ok) {
+            showReassignFieldError(field, message);
+            valid = false;
+        }
+    });
+    return valid;
+}
+
+async function handleReassign(e) {
+    e.preventDefault();
+    if (reassignSubmitBtn.disabled) return;
+    clearReassignErrors();
+
+    const values = {
+        branch_id: reassignBranchId,
+        manager_name: reassignForm.elements.manager_name.value.trim(),
+        manager_email: reassignForm.elements.manager_email.value.trim(),
+        manager_password: reassignForm.elements.manager_password.value,
+    };
+
+    if (!validateReassignForm(values)) return;
+
+    reassignSubmitBtn.disabled = true;
+    reassignSubmitBtn.textContent = 'Saving…';
+    try {
+        const res = await Api.changeBranchAdmin(values);
+        el('reassignModal').classList.add('hidden');
+        reassignForm.reset();
+        showToast(`Branch manager updated. New login: ${res.data.manager_email}`, 'success');
+        await loadBranches();
+    } catch (err) {
+        const errorBox = el('reassignError');
+        errorBox.textContent = err.message;
+        errorBox.classList.remove('hidden');
+    } finally {
+        reassignSubmitBtn.disabled = false;
+        reassignSubmitBtn.textContent = 'Save';
+    }
+}
+
+el('reassignCloseBtn').addEventListener('click', closeReassignModal);
+el('reassignCancelBtn').addEventListener('click', closeReassignModal);
+el('reassignModal').addEventListener('click', (e) => {
+    if (e.target === el('reassignModal')) closeReassignModal();
+});
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !el('reassignModal').classList.contains('hidden')) closeReassignModal();
+});
+reassignForm.addEventListener('submit', handleReassign);
 
 loadBranches();

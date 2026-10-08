@@ -44,6 +44,20 @@ function renderCourse(course, enrollment) {
     el('enrPaid').textContent = enrollment.paid_in_full;
     el('enrPartial').textContent = enrollment.partial;
     el('enrOverdue').textContent = enrollment.overdue;
+
+    const preview = el('certificatePreview');
+    const uploadLabel = el('certificateUploadLabel');
+    if (course.certificate_path) {
+        const isPdf = course.certificate_path.toLowerCase().endsWith('.pdf');
+        preview.innerHTML = isPdf
+            ? `<a href="${courseCertificateUrl(course.id)}" target="_blank" rel="noopener" class="text-sm text-red-600 hover:underline">View uploaded PDF certificate →</a>`
+            : `<img src="${courseCertificateUrl(course.id)}" alt="Sample certificate" class="max-w-xs rounded-lg border border-gray-200" />`;
+        preview.classList.remove('hidden');
+        uploadLabel.textContent = 'Replace certificate';
+    } else {
+        preview.classList.add('hidden');
+        uploadLabel.textContent = 'Upload certificate';
+    }
 }
 
 async function loadCourse() {
@@ -54,6 +68,30 @@ async function loadCourse() {
         showError(err.message);
     }
 }
+
+el('certificateInput').addEventListener('change', async () => {
+    const input = el('certificateInput');
+    const file = input.files[0];
+    if (!file) return;
+    const status = el('certificateStatus');
+    if (file.size > 5 * 1024 * 1024) {
+        status.textContent = 'File is larger than 5 MB.';
+        status.className = 'text-xs mt-1 text-red-600';
+        return;
+    }
+    status.textContent = 'Uploading…';
+    status.className = 'text-xs mt-1 text-gray-500';
+    try {
+        await Api.uploadCourseCertificate(COURSE_ID, file);
+        showToast('Certificate uploaded.', 'success');
+        status.textContent = '';
+        input.value = '';
+        await loadCourse();
+    } catch (err) {
+        status.textContent = err.message;
+        status.className = 'text-xs mt-1 text-red-600';
+    }
+});
 
 el('deleteCourseBtn').addEventListener('click', async () => {
     if (!confirm('Are you sure you want to delete this course?')) return;

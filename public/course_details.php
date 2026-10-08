@@ -67,6 +67,17 @@ $headerActions = '<a href="course_form.php?id=' . $courseId . '" class="text-sm 
                     </div>
                     <p class="text-xs text-gray-500 mt-2">A course with enrolled students cannot be deleted; deactivate it instead.</p>
                 </div>
+                <div class="mt-5 pt-4 border-t border-gray-200">
+                    <p class="text-sm font-bold mb-2">Sample Certificate</p>
+                    <p class="text-xs text-gray-500 mb-2">Shown to every student enrolled in this course, on their own Certificate page.</p>
+                    <div id="certificatePreview" class="hidden mb-3"></div>
+                    <label class="inline-flex items-center gap-2 cursor-pointer text-sm font-semibold text-red-600 hover:underline">
+                        <span id="certificateUploadLabel">Upload certificate</span>
+                        <input type="file" id="certificateInput" accept="application/pdf,image/jpeg,image/png" class="hidden" />
+                    </label>
+                    <span class="text-xs text-gray-400 ml-2">PDF, JPEG or PNG, up to 5 MB</span>
+                    <p id="certificateStatus" class="text-xs mt-1"></p>
+                </div>
             </section>
 
             <!-- ============ ENROLLMENT STATISTICS ============ -->

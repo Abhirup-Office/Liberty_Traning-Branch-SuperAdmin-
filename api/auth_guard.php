@@ -10,6 +10,49 @@ require_once __DIR__ . '/session.php';
 
 const IDLE_TIMEOUT_SECONDS = 7200; // 2 hours without activity ends the session
 
+// Brute-force lockout for Super Admin / Branch Admin login (api/login.php). Same thresholds
+// and same column shape (failed_login_count, locked_until) as the student login lockout in
+// student_auth_guard.php, applied independently to super_admins and branch_admins — two
+// separate tables, two separate counters, no shared state between the two login systems.
+const ADMIN_LOGIN_MAX_ATTEMPTS = 5;
+const ADMIN_LOGIN_LOCKOUT_SECONDS = 900; // 15 minutes
+
+/** True when this admin row's lockout (if any) has expired or never existed. */
+function admin_login_unlocked(array $row): bool
+{
+    return $row['locked_until'] === null || strtotime($row['locked_until']) <= time();
+}
+
+/**
+ * Records one failed login attempt against a super_admins/branch_admins row. Mirrors
+ * student_login.php's logic exactly: the lock itself is the penalty, so the counter resets
+ * to 0 once a lock is applied rather than continuing to climb.
+ */
+function register_admin_login_failure(PDO $pdo, string $table, int $id, int $currentFailedCount): void
+{
+    if (!in_array($table, ['super_admins', 'branch_admins'], true)) {
+        throw new InvalidArgumentException('Invalid admin table');
+    }
+    $attempts = $currentFailedCount + 1;
+    $lockUntil = null;
+    if ($attempts >= ADMIN_LOGIN_MAX_ATTEMPTS) {
+        $lockUntil = date('Y-m-d H:i:s', time() + ADMIN_LOGIN_LOCKOUT_SECONDS);
+        $attempts = 0;
+    }
+    $stmt = $pdo->prepare("UPDATE `$table` SET failed_login_count = :n, locked_until = :locked WHERE id = :id");
+    $stmt->execute([':n' => $attempts, ':locked' => $lockUntil, ':id' => $id]);
+}
+
+/** Clears lockout state on a successful login. */
+function clear_admin_login_lockout(PDO $pdo, string $table, int $id): void
+{
+    if (!in_array($table, ['super_admins', 'branch_admins'], true)) {
+        throw new InvalidArgumentException('Invalid admin table');
+    }
+    $stmt = $pdo->prepare("UPDATE `$table` SET failed_login_count = 0, locked_until = NULL WHERE id = :id");
+    $stmt->execute([':id' => $id]);
+}
+
 /**
  * Returns the logged-in admin's session data, or null if not logged in or idle-expired.
  * `branch_id` is only ever present for a branch_admin session — it comes

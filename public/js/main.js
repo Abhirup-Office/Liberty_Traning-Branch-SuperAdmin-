@@ -57,8 +57,8 @@ function renderCampusSwitcher() {
                 ? 'border-red-600 bg-red-50 ring-1 ring-red-600'
                 : 'border-gray-200 bg-white hover:border-red-300'
         }">
-            <p class="font-bold">${b.name}</p>
-            <p class="text-xs text-gray-500 mt-1">${b.manager_name} · ${b.location}</p>
+            <p class="font-bold">${escapeHtml(b.name)}</p>
+            <p class="text-xs text-gray-500 mt-1">${escapeHtml(b.manager_name)} · ${escapeHtml(b.location)}</p>
         </button>
     `).join('');
 
@@ -101,7 +101,7 @@ function wireViewBanner() {
 function populateCourseFilters() {
     const courseFilter = el('courseFilter');
     const modalSelect = el('modalCourseSelect');
-    const courseOptions = state.courses.map((c) => `<option value="${c.id}">${c.course_name}</option>`).join('');
+    const courseOptions = state.courses.map((c) => `<option value="${c.id}">${escapeHtml(c.course_name)}</option>`).join('');
     courseFilter.insertAdjacentHTML('beforeend', courseOptions);
     modalSelect.innerHTML = courseOptions;
     modalSelect.addEventListener('change', syncCourseFee);
@@ -166,11 +166,16 @@ async function fetchStudents() {
     }
 }
 
+function formatLastPayment(value) {
+    if (!value) return '<span class="text-gray-400">No payment yet</span>';
+    return new Date(String(value).replace(' ', 'T')).toLocaleDateString('en-IN');
+}
+
 function renderStudentTable() {
     const tbody = el('studentTableBody');
 
     if (state.students.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" class="text-center text-gray-400 py-8">No students found.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="10" class="text-center text-gray-400 py-8">No students found.</td></tr>`;
         return;
     }
 
@@ -178,24 +183,30 @@ function renderStudentTable() {
         <tr class="hover:bg-gray-50 cursor-pointer" data-student-id="${s.id}">
             <td class="px-4 py-3">
                 <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${avatarColorFor(s.id)}">${initialsOf(s.first_name, s.last_name)}</div>
+                    <div class="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${avatarColorFor(s.id)}">${escapeHtml(initialsOf(s.first_name, s.last_name))}</div>
                     <div>
-                        <p class="font-semibold">${s.first_name} ${s.last_name}</p>
-                        <p class="text-xs text-gray-500">${s.phone}</p>
-                        <p class="text-xs text-gray-400 font-mono">${s.student_code}</p>
+                        <p class="font-semibold">${escapeHtml(s.first_name)} ${escapeHtml(s.last_name)}</p>
+                        <p class="text-xs text-gray-500">${escapeHtml(s.phone)}</p>
+                        <p class="text-xs text-gray-400 font-mono">${escapeHtml(s.display_id || s.student_code)}</p>
                     </div>
                 </div>
             </td>
-            <td class="px-4 py-3 text-gray-600">${s.course_name}</td>
+            <td class="px-4 py-3 text-gray-600">${escapeHtml(s.course_name)}</td>
             <td class="px-4 py-3">${addressCell(s.address)}</td>
             <td class="px-4 py-3 text-right">${currency(s.total_fee)}</td>
             <td class="px-4 py-3 text-right text-green-600">${currency(s.amount_paid)}</td>
             <td class="px-4 py-3 text-right text-orange-500">${currency(s.balance_due)}</td>
             <td class="px-4 py-3 text-center">
-                <span class="px-2 py-1 rounded-full text-xs font-semibold ${statusBadgeClass[s.status]}">${s.status}</span>
+                <span class="px-2 py-1 rounded-full text-xs font-semibold ${statusBadgeClass[s.status]}">${escapeHtml(s.status)}</span>
             </td>
+            <td class="px-4 py-3 text-gray-600 whitespace-nowrap">${formatLastPayment(s.last_payment_date)}</td>
+            <td class="px-4 py-3 text-center">${certificateCellHtml(s)}</td>
             <td class="px-4 py-3 text-center whitespace-nowrap">
-                <button data-edit-id="${s.id}" title="Edit student" aria-label="Edit ${s.first_name}" class="text-gray-400 hover:text-red-600 mr-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 rounded">
+                <button type="button" data-profile-id="${s.id}" title="View profile" aria-label="View profile of ${escapeHtml(s.first_name)}" class="text-xs font-semibold text-gray-700 border border-gray-300 rounded-lg px-2.5 py-1.5 mr-1 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500">View Profile</button>
+                ${needsReminder(s)
+                    ? `<button type="button" data-remind-id="${s.id}" title="Send WhatsApp reminder" aria-label="Send WhatsApp reminder to ${escapeHtml(s.first_name)}" class="text-xs font-semibold text-green-700 border border-green-200 rounded-lg px-2.5 py-1.5 mr-1 hover:bg-green-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500">Send Reminder</button>`
+                    : `<span class="text-xs font-semibold text-gray-400 border border-gray-200 rounded-lg px-2.5 py-1.5 mr-1">Paid · No reminder</span>`}
+                <button data-edit-id="${s.id}" title="Edit student" aria-label="Edit ${escapeHtml(s.first_name)}" class="text-gray-400 hover:text-red-600 mr-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 rounded">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                     </svg>
@@ -211,17 +222,33 @@ function renderStudentTable() {
 
     tbody.querySelectorAll('tr[data-student-id]').forEach((row) => {
         row.addEventListener('click', (e) => {
-            if (e.target.closest('[data-delete-id], [data-edit-id]')) return;
+            if (e.target.closest('[data-delete-id], [data-edit-id], [data-profile-id], [data-remind-id], [data-cert-id]')) return;
             selectStudent(Number(row.dataset.studentId));
         });
     });
 
     bindAddressButtons(tbody);
+    bindCertificateButtons(tbody);
 
     tbody.querySelectorAll('[data-edit-id]').forEach((btn) => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
             openEditStudent(Number(btn.dataset.editId));
+        });
+    });
+
+    tbody.querySelectorAll('[data-profile-id]').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            openStudentProfile(btn.dataset.profileId);
+        });
+    });
+
+    tbody.querySelectorAll('[data-remind-id]').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const student = state.students.find((st) => String(st.id) === btn.dataset.remindId);
+            if (student) sendWhatsAppReminder(student);
         });
     });
 
@@ -388,6 +415,9 @@ el('addStudentForm').addEventListener('submit', async (e) => {
         last_name: lastName || '',
         phone: String(form.get('phone')).trim(),
         address: String(form.get('address') ?? '').trim(),
+        father_name: String(form.get('father_name') ?? '').trim(),
+        mother_name: String(form.get('mother_name') ?? '').trim(),
+        date_of_birth: String(form.get('date_of_birth') ?? '').trim(),
         total_fee: Number(form.get('total_fee')),
         amount_paid: Number(form.get('amount_paid')) || 0,
     };
@@ -402,7 +432,7 @@ el('addStudentForm').addEventListener('submit', async (e) => {
     try {
         const res = await Api.addStudent(payload);
         closeModal();
-        showToast(`${payload.first_name} ${payload.last_name} added. Student code: ${res.data.student_code}`, 'success');
+        showToast(`${payload.first_name} ${payload.last_name} added. Student ID: ${res.data.display_id}`, 'success');
         state.pagination.page = 1;
         await Promise.all([fetchStudents(), updateKpis()]);
     } catch (err) {
@@ -440,7 +470,10 @@ async function openEditStudent(id) {
         form.elements.full_name.value = `${s.first_name} ${s.last_name}`.trim();
         form.elements.phone.value = s.phone;
         form.elements.address.value = s.address || '';
-        el('editStudentCode').textContent = `Student code ${s.student_code}`;
+        form.elements.father_name.value = s.father_name || '';
+        form.elements.mother_name.value = s.mother_name || '';
+        form.elements.date_of_birth.value = s.date_of_birth || '';
+        el('editStudentCode').textContent = `Student ID ${s.display_id || s.student_code}`;
     } catch (err) {
         showEditError(err.message);
     }
@@ -458,6 +491,9 @@ el('editStudentForm').addEventListener('submit', async (e) => {
         last_name: rest.join(' '),
         phone: form.elements.phone.value.trim(),
         address: form.elements.address.value.trim(),
+        father_name: form.elements.father_name.value.trim(),
+        mother_name: form.elements.mother_name.value.trim(),
+        date_of_birth: form.elements.date_of_birth.value.trim(),
     };
 
     if (!payload.first_name) {

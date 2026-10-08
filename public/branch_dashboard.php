@@ -112,6 +112,8 @@ require __DIR__ . '/../templates/super_layout_top.php';
                             <th class="text-right px-4 py-3">Paid</th>
                             <th class="text-right px-4 py-3">Balance</th>
                             <th class="text-center px-4 py-3">Status</th>
+                            <th class="text-left px-4 py-3">Last Payment</th>
+                            <th class="text-center px-4 py-3">Certificate</th>
                             <th class="text-center px-4 py-3">Actions</th>
                         </tr>
                     </thead>
@@ -178,6 +180,18 @@ require __DIR__ . '/../templates/super_layout_top.php';
                     <label class="text-xs font-semibold text-gray-600">Phone Number *</label>
                     <input name="phone" required type="tel" pattern="[0-9]{10}" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mt-1" placeholder="10-digit number" />
                 </div>
+                <div>
+                    <label class="text-xs font-semibold text-gray-600">Father's Name</label>
+                    <input name="father_name" type="text" maxlength="100" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mt-1" />
+                </div>
+                <div>
+                    <label class="text-xs font-semibold text-gray-600">Mother's Name</label>
+                    <input name="mother_name" type="text" maxlength="100" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mt-1" />
+                </div>
+                <div class="sm:col-span-2">
+                    <label class="text-xs font-semibold text-gray-600">Date of Birth</label>
+                    <input name="date_of_birth" type="date" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mt-1" />
+                </div>
                 <div class="sm:col-span-2">
                     <label class="text-xs font-semibold text-gray-600">Address</label>
                     <textarea name="address" rows="2" maxlength="500" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mt-1" placeholder="House no., street, area, city, PIN"></textarea>
@@ -187,8 +201,9 @@ require __DIR__ . '/../templates/super_layout_top.php';
                     <select name="course_id" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mt-1" id="modalCourseSelect"></select>
                 </div>
                 <div>
-                    <label class="text-xs font-semibold text-gray-600">Course Fee (from course) *</label>
-                    <input name="total_fee" readonly required type="number" min="1" step="0.01" class="w-full border border-gray-300 bg-gray-100 text-gray-600 rounded-lg px-3 py-2 text-sm mt-1" />
+                    <label class="text-xs font-semibold text-gray-600">Course Fee *</label>
+                    <input name="total_fee" required type="number" min="1" step="0.01" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mt-1 focus:outline-none focus:ring-2 focus:ring-red-500" />
+                    <p class="text-xs text-gray-400 mt-1">Fills in from the selected course — edit it to set a different fee for this student.</p>
                 </div>
                 <div>
                     <label class="text-xs font-semibold text-gray-600">Initial Payment</label>
@@ -225,6 +240,21 @@ require __DIR__ . '/../templates/super_layout_top.php';
                 <input id="editPhone" name="phone" type="tel" required pattern="[0-9]{10}" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mt-1 focus:outline-none focus:ring-2 focus:ring-red-500" placeholder="10-digit number" />
                 <p class="hidden text-xs text-red-600 mt-1" data-error-for="phone"></p>
             </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label for="editFatherName" class="text-xs font-semibold text-gray-600">Father's Name</label>
+                    <input id="editFatherName" name="father_name" type="text" maxlength="100" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mt-1 focus:outline-none focus:ring-2 focus:ring-red-500" />
+                </div>
+                <div>
+                    <label for="editMotherName" class="text-xs font-semibold text-gray-600">Mother's Name</label>
+                    <input id="editMotherName" name="mother_name" type="text" maxlength="100" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mt-1 focus:outline-none focus:ring-2 focus:ring-red-500" />
+                </div>
+            </div>
+            <div>
+                <label for="editDob" class="text-xs font-semibold text-gray-600">Date of Birth</label>
+                <input id="editDob" name="date_of_birth" type="date" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mt-1 focus:outline-none focus:ring-2 focus:ring-red-500" />
+                <p class="hidden text-xs text-red-600 mt-1" data-error-for="date_of_birth"></p>
+            </div>
             <div>
                 <label for="editAddress" class="text-xs font-semibold text-gray-600">Address</label>
                 <textarea id="editAddress" name="address" rows="3" maxlength="500" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mt-1 focus:outline-none focus:ring-2 focus:ring-red-500" placeholder="House no., street, area, city, PIN"></textarea>
@@ -241,6 +271,7 @@ require __DIR__ . '/../templates/super_layout_top.php';
 
 <?php require __DIR__ . '/../templates/student_profile_modal.php'; ?>
 <?php require __DIR__ . '/../templates/address_modal.php'; ?>
+<?php require __DIR__ . '/../templates/student_certificate_modal.php'; ?>
 
 <script>
     // Branch the page is locked to (Branch Admin's branch, or a Super Admin's viewing branch);

@@ -22,7 +22,7 @@ function fetch_course_for_admin(PDO $pdo, array $admin, int $courseId): ?array
 {
     $scope = course_scope_branch($admin);
     $sql = "SELECT c.id, c.branch_id, c.course_name, c.course_code, c.description, c.duration,
-                   c.total_fee, c.start_date, c.end_date, c.status, c.created_at, c.updated_at,
+                   c.total_fee, c.start_date, c.end_date, c.status, c.certificate_path, c.created_at, c.updated_at,
                    b.name AS branch_name,
                    (SELECT COUNT(*) FROM students s WHERE s.course_id = c.id) AS enrolled_count
             FROM courses c

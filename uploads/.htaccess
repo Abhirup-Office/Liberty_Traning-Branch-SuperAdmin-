@@ -1,0 +1,14 @@
+# Student photos are private files. The whole project directory is the Apache docroot
+# (there is no separate public/ vhost root), so without this, a guessed/leaked filename
+# under uploads/ would be directly downloadable by anyone. This blocks that unconditionally;
+# the only way to read a photo is through api/get_student_photo.php, which checks
+# authentication and branch ownership first.
+# Dual syntax (2.4 / legacy 2.2) so this degrades safely rather than 500-ing if a module
+# isn't loaded on a given host.
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+</IfModule>

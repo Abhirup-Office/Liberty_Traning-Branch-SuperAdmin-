@@ -28,9 +28,13 @@ function showToast(message, type = 'success', duration = 3500) {
 
     const toast = document.createElement('div');
     toast.className = `bg-white border-l-4 ${style.border} rounded-lg shadow-lg px-4 py-3 flex items-start gap-2 text-sm animate-[fadeIn_0.2s_ease-out]`;
+    // escapeHtml() comes from shared.js/student-shared.js, loaded after this file but always
+    // before showToast() is actually called at runtime. Messages often embed user-controlled
+    // data (a student's name, a branch name, …), so this is escaped the same as every other
+    // rendered value rather than trusted as plain text.
     toast.innerHTML = `
         <span>${style.icon}</span>
-        <span class="${style.text} font-medium leading-snug">${message}</span>
+        <span class="${style.text} font-medium leading-snug">${escapeHtml(message)}</span>
     `;
 
     container.appendChild(toast);

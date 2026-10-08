@@ -17,7 +17,12 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 // A branch_admin only ever sees their own branch — campus performance
 // numbers are other branches' confidential financials otherwise.
 $isBranchAdmin = $admin['role'] === 'branch_admin';
-$branchFilter = $isBranchAdmin ? ' WHERE id = :branch_id' : '';
+// A branch_admin's own branch is always shown even if it has since been deactivated (their
+// existing session still works until they next log in). Super Admin's branch list, used for dropdowns/selectors elsewhere, is
+// Active-only: a deactivated branch should not be offered as a target for new students or
+// courses. The Branch Management page itself uses the separate api/get_all_branches.php,
+// which deliberately returns every branch regardless of status.
+$branchFilter = $isBranchAdmin ? ' WHERE id = :branch_id' : " WHERE status = 'Active'";
 $branchParams = $isBranchAdmin ? [':branch_id' => $admin['branch_id']] : [];
 
 $branchStmt = $pdo->prepare("SELECT id, name, manager_name, location FROM branches$branchFilter ORDER BY id");
@@ -41,10 +46,9 @@ $perfStmt = $pdo->prepare(
     "SELECT b.id, b.name, b.manager_name,
             COUNT(s.id) AS student_count,
             COALESCE(SUM(COALESCE(tx.paid, 0)), 0) AS collected,
-            COALESCE(SUM(GREATEST(c.total_fee - COALESCE(tx.paid, 0), 0)), 0) AS pending
+            COALESCE(SUM(GREATEST(s.total_fee - COALESCE(tx.paid, 0), 0)), 0) AS pending
      FROM branches b
      LEFT JOIN students s ON s.branch_id = b.id
-     LEFT JOIN courses c ON c.id = s.course_id
      " . FEE_JOIN_SQL . "
      $perfFilter
      GROUP BY b.id, b.name, b.manager_name

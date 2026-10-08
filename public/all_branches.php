@@ -52,6 +52,7 @@ $headerActions = '
                                 <th class="text-right px-4 py-3">Collected</th>
                                 <th class="text-right px-4 py-3">Pending</th>
                                 <th class="text-left px-4 py-3">Clearance</th>
+                                <th class="text-center px-4 py-3">Status</th>
                                 <th class="text-center px-4 py-3">Actions</th>
                             </tr>
                         </thead>
@@ -102,7 +103,11 @@ $headerActions = '
                 </div>
                 <div>
                     <label for="managerPassword" class="text-xs font-semibold text-gray-600">Initial Password *</label>
-                    <input id="managerPassword" name="manager_password" type="password" minlength="10" maxlength="72" required autocomplete="new-password" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mt-1 focus:outline-none focus:ring-2 focus:ring-red-500" />
+                    <div class="relative mt-1">
+                        <input id="managerPassword" name="manager_password" type="password" minlength="10" maxlength="72" required autocomplete="new-password" class="w-full border border-gray-300 rounded-lg pl-3 pr-10 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500" />
+                        <button type="button" data-toggle-password="managerPassword" aria-label="Show password" class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-600 focus:outline-none">
+                        </button>
+                    </div>
                     <p class="text-xs text-gray-400 mt-1">At least 10 characters. Share it with the manager securely.</p>
                     <p class="hidden text-xs text-red-600 mt-1" data-error-for="manager_password"></p>
                 </div>
@@ -126,6 +131,56 @@ $headerActions = '
             <button type="button" id="managerCloseBtn" class="text-gray-400 hover:text-gray-600 text-xl leading-none" aria-label="Close">&times;</button>
         </div>
         <div class="px-5 py-4 space-y-3 overflow-y-auto" id="managerBody"></div>
+    </div>
+</div>
+
+<!-- ============ CHANGE BRANCH ADMIN MODAL ============ -->
+<div id="reassignModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4" role="dialog" aria-modal="true" aria-labelledby="reassignTitle">
+    <div class="bg-white rounded-xl shadow-lg w-full max-w-md max-h-[90vh] flex flex-col">
+        <div class="flex items-center justify-between px-5 py-4 border-b border-gray-200">
+            <h3 class="font-bold text-lg" id="reassignTitle">Change Branch Admin</h3>
+            <button type="button" id="reassignCloseBtn" class="text-gray-400 hover:text-gray-600 text-xl leading-none" aria-label="Close">&times;</button>
+        </div>
+        <form id="reassignForm" novalidate class="px-5 py-4 space-y-4 overflow-y-auto">
+            <div>
+                <p class="text-xs text-gray-500">Branch</p>
+                <p class="font-semibold" id="reassignBranchName">—</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500">Current Manager</p>
+                <p class="font-semibold" id="reassignCurrentManager">—</p>
+            </div>
+
+            <fieldset class="space-y-4 pt-2 border-t border-gray-200">
+                <legend class="text-sm font-bold text-gray-700 mb-1">New Branch Manager</legend>
+                <p class="text-xs text-gray-500 -mt-3">Creates a new manager account for this branch and signs the current one out.</p>
+                <div>
+                    <label for="reassignManagerName" class="text-xs font-semibold text-gray-600">Manager Name *</label>
+                    <input id="reassignManagerName" name="manager_name" type="text" maxlength="100" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mt-1 focus:outline-none focus:ring-2 focus:ring-red-500" />
+                    <p class="hidden text-xs text-red-600 mt-1" data-error-for="manager_name"></p>
+                </div>
+                <div>
+                    <label for="reassignManagerEmail" class="text-xs font-semibold text-gray-600">Manager Email *</label>
+                    <input id="reassignManagerEmail" name="manager_email" type="email" maxlength="100" required autocomplete="off" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mt-1 focus:outline-none focus:ring-2 focus:ring-red-500" />
+                    <p class="hidden text-xs text-red-600 mt-1" data-error-for="manager_email"></p>
+                </div>
+                <div>
+                    <label for="reassignManagerPassword" class="text-xs font-semibold text-gray-600">Manager Password *</label>
+                    <div class="relative mt-1">
+                        <input id="reassignManagerPassword" name="manager_password" type="password" minlength="10" maxlength="72" required autocomplete="new-password" class="w-full border border-gray-300 rounded-lg pl-3 pr-10 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500" />
+                        <button type="button" data-toggle-password="reassignManagerPassword" aria-label="Show password" class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-600 focus:outline-none"></button>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-1">At least 10 characters. Share it with the manager securely.</p>
+                    <p class="hidden text-xs text-red-600 mt-1" data-error-for="manager_password"></p>
+                </div>
+            </fieldset>
+
+            <p id="reassignError" role="alert" class="hidden text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2"></p>
+            <div class="flex justify-end gap-3 pt-2 border-t border-gray-200">
+                <button type="button" id="reassignCancelBtn" class="px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-100 rounded-lg">Cancel</button>
+                <button type="submit" id="reassignSubmitBtn" class="px-4 py-2 text-sm font-semibold bg-red-600 hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500">Save</button>
+            </div>
+        </form>
     </div>
 </div>
 

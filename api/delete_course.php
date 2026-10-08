@@ -9,6 +9,7 @@
 declare(strict_types=1);
 require __DIR__ . '/config.php';
 require __DIR__ . '/course_access.php';
+require __DIR__ . '/storage.php';
 $admin = require_api_login(['super_admin', 'branch_admin']);
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -35,7 +36,18 @@ if ((int) $course['enrolled_count'] > 0) {
     ], 409);
 }
 
+$filesStmt = $pdo->prepare("SELECT storage_provider, storage_key FROM uploaded_files WHERE file_type = 'course_certificate' AND reference_id = :id");
+$filesStmt->execute([':id' => $id]);
+$files = $filesStmt->fetchAll();
+
 $stmt = $pdo->prepare("DELETE FROM courses WHERE id = :id");
 $stmt->execute([':id' => $id]);
+
+// Only reached once the course row is actually gone, so every certificate ever uploaded
+// for it (including superseded history) is cleaned up too.
+$pdo->prepare("DELETE FROM uploaded_files WHERE file_type = 'course_certificate' AND reference_id = :id")->execute([':id' => $id]);
+foreach ($files as $f) {
+    storage_delete($f['storage_provider'], $f['storage_key']);
+}
 
 send_json(['success' => true, 'message' => 'Course deleted']);

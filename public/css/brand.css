@@ -1,0 +1,25 @@
+/* Global application background. Lives on the layout wrapper (.app-shell), which every
+   authenticated page inherits through templates/*_layout_top.php, so no page sets its own.
+
+   The layer is position: fixed, so it covers the viewport at every scroll position instead of
+   scrolling away or being clipped to the height of the content. background-size: contain keeps
+   the complete square image visible at any aspect ratio (no cropping); no-repeat prevents tiling.
+   Opacity applies only to this pseudo-element, never to the content above it. */
+
+.app-shell {
+    position: relative;
+    isolation: isolate;
+}
+
+.app-shell::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background-image: url("../assets/liberty-background.jpg");
+    background-position: center;
+    background-size: contain;
+    background-repeat: no-repeat;
+    opacity: 0.07;
+    pointer-events: none;
+    z-index: -1;
+}

@@ -29,7 +29,8 @@ $navItems = $isBranchAdmin ? [
     'branch_view' => ['label' => 'Branch Dashboard', 'href' => 'branch_dashboard.php'],
 ];
 ?>
-<div class="flex min-h-screen">
+<link rel="stylesheet" href="css/brand.css" />
+<div class="flex min-h-screen app-shell">
 
     <!-- Mobile overlay (closes the drawer on tap) -->
     <div id="superNavOverlay" class="hidden fixed inset-0 bg-black/50 z-40 md:hidden"></div>
@@ -37,9 +38,8 @@ $navItems = $isBranchAdmin ? [
     <!-- ============ SIDEBAR — drawer on mobile, fixed column on md+ ============ -->
     <aside id="superSidebar" class="fixed inset-y-0 left-0 z-50 w-64 flex flex-col bg-white border-r border-gray-200 shrink-0 -translate-x-full transition-transform duration-200 md:translate-x-0 md:sticky md:top-0 md:h-screen md:self-start md:z-30">
         <div class="flex items-center gap-3 px-5 py-5 border-b border-gray-200">
-            <div class="w-10 h-10 rounded-lg bg-red-600 text-white flex items-center justify-center font-extrabold">LT</div>
-            <div>
-                <p class="font-extrabold leading-tight">LIBERTY</p>
+            <div class="min-w-0">
+                <img src="assets/liberty-logo.jpg" alt="Liberty Foundation" class="w-full max-w-[200px] h-auto" />
                 <p class="text-xs text-gray-500"><?= htmlspecialchars($roleLabel) ?></p>
             </div>
         </div>
@@ -79,7 +79,6 @@ $navItems = $isBranchAdmin ? [
                 </div>
                 <div class="flex items-center gap-2">
                     <?= $headerActions ?>
-                    <button id="logoutBtnMobile" class="md:hidden text-sm font-semibold border border-gray-300 rounded-lg px-3 py-2 hover:bg-gray-50">Logout</button>
                 </div>
             </div>
         </header>

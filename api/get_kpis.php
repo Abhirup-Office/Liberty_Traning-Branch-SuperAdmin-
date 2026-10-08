@@ -18,22 +18,31 @@ $branch = scoped_branch_id($admin, $_GET['branch'] ?? 'all');
 
 $where = '';
 $params = [];
-if ($branch !== 'all' && $branch !== '' && $branch !== null) {
+$isSingleBranch = $branch !== 'all' && $branch !== '' && $branch !== null;
+if ($isSingleBranch) {
     $where = 'WHERE s.branch_id = :branch_id';
     $params[':branch_id'] = (int) $branch;
+}
+
+// Scoped to the one branch being viewed whenever possible — see fee_join_sql()'s docblock.
+// A Branch Admin dashboard (the common case) only ever aggregates its own branch's
+// transactions instead of every branch's, regardless of total system-wide student count.
+$feeJoinSql = $isSingleBranch ? fee_join_sql() : FEE_JOIN_SQL;
+if ($isSingleBranch) {
+    $params[':fee_scope_branch_id'] = (int) $branch;
 }
 
 $sql = "SELECT
             COUNT(*) AS enrolled,
             COALESCE(SUM(" . FEE_PAID_SQL . "), 0) AS collected,
-            COALESCE(SUM(GREATEST(c.total_fee - " . FEE_PAID_SQL . ", 0)), 0) AS pending,
-            COALESCE(SUM(c.total_fee), 0) AS total_fees,
+            COALESCE(SUM(GREATEST(s.total_fee - " . FEE_PAID_SQL . ", 0)), 0) AS pending,
+            COALESCE(SUM(s.total_fee), 0) AS total_fees,
             SUM(CASE WHEN (" . FEE_STATUS_SQL . ") = 'Pending' THEN 1 ELSE 0 END) AS overdue_count,
             SUM(CASE WHEN (" . FEE_STATUS_SQL . ") = 'Partial' THEN 1 ELSE 0 END) AS partial_count,
             SUM(CASE WHEN (" . FEE_STATUS_SQL . ") = 'Paid in Full' THEN 1 ELSE 0 END) AS paid_count
         FROM students s
         JOIN courses c ON c.id = s.course_id
-        " . FEE_JOIN_SQL . "
+        $feeJoinSql
         $where";
 
 $stmt = $pdo->prepare($sql);

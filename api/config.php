@@ -7,11 +7,13 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/session.php';
+require_once __DIR__ . '/json_helpers.php';
+install_safe_error_handler();
 
+// This API is only ever called from this same application's own frontend JS (relative
+// paths, same origin) — no CORS headers are needed, and sending a wildcard one for every
+// response was pure unused attack surface.
 header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, DELETE, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
 
 // Preflight requests never need a DB connection or a body.
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -29,14 +31,6 @@ try {
     exit;
 }
 
-/** Reads and decodes a JSON request body into an associative array. */
-function read_json_body(): array
-{
-    $raw = file_get_contents('php://input');
-    $data = json_decode($raw, true);
-    return is_array($data) ? $data : [];
-}
-
 /** Derives a status label from fee totals. */
 function derive_status(float $totalFee, float $amountPaid): string
 {
@@ -48,11 +42,4 @@ function derive_status(float $totalFee, float $amountPaid): string
         return 'Overdue';
     }
     return 'Partial';
-}
-
-function send_json($data, int $code = 200): void
-{
-    http_response_code($code);
-    echo json_encode($data);
-    exit;
 }

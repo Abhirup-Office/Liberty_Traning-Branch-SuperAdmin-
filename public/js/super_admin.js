@@ -114,7 +114,7 @@ function renderAllStudents(students) {
             <td class="px-4 py-3">
                 <p class="font-semibold">${escapeHtml(s.first_name)} ${escapeHtml(s.last_name)}</p>
                 <p class="text-xs text-gray-500">${escapeHtml(s.phone)}</p>
-                <p class="text-xs text-gray-400 font-mono">${escapeHtml(s.student_code)}</p>
+                <p class="text-xs text-gray-400 font-mono">${escapeHtml(s.display_id || s.student_code)}</p>
             </td>
             <td class="px-4 py-3">
                 <span class="px-2 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">${escapeHtml(s.branch_name)}</span>

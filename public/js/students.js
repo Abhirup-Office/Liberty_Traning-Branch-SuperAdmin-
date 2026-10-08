@@ -3,7 +3,7 @@
  * server (get_students.php); this file only builds the query and renders the result.
  */
 
-const STUDENT_COLS = 9;
+const STUDENT_COLS = 10;
 const studentState = { page: 1, perPage: 10 };
 
 function studentFilters() {
@@ -63,7 +63,7 @@ function renderStudentRows(students) {
             <td class="px-4 py-3">
                 <p class="font-semibold">${escapeHtml(s.first_name)} ${escapeHtml(s.last_name)}</p>
                 <p class="text-xs text-gray-500">${escapeHtml(s.phone)}</p>
-                <p class="text-xs text-gray-400 font-mono">${escapeHtml(s.student_code)}</p>
+                <p class="text-xs text-gray-400 font-mono">${escapeHtml(s.display_id || s.student_code)}</p>
             </td>
             <td class="px-4 py-3"><span class="px-2 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">${escapeHtml(s.branch_name)}</span></td>
             <td class="px-4 py-3 text-gray-600">${escapeHtml(s.course_name)}</td>
@@ -72,6 +72,7 @@ function renderStudentRows(students) {
             <td class="px-4 py-3 text-right text-green-600">${currency(s.amount_paid)}</td>
             <td class="px-4 py-3 text-right text-orange-500">${currency(s.balance_due)}</td>
             <td class="px-4 py-3 text-center"><span class="px-2 py-1 rounded-full text-xs font-semibold ${statusBadgeClass[s.status] || ''}">${escapeHtml(s.status)}</span></td>
+            <td class="px-4 py-3 text-center">${certificateCellHtml(s)}</td>
             <td class="px-4 py-3">
                 <div class="flex flex-wrap items-center justify-center gap-1.5">
                     ${studentActionButtons(s)}
@@ -87,6 +88,7 @@ function renderStudentRows(students) {
     });
     bindStudentActions(tbody, students);
     bindAddressButtons(tbody);
+    bindCertificateButtons(tbody);
 
     tbody.querySelectorAll('tr[data-student-row]').forEach((row) => {
         row.addEventListener('click', (e) => {

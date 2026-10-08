@@ -66,6 +66,7 @@ $headerActions = '';
                                 <th class="text-right px-4 py-3">Paid</th>
                                 <th class="text-right px-4 py-3">Balance</th>
                                 <th class="text-center px-4 py-3">Status</th>
+                                <th class="text-center px-4 py-3">Certificate</th>
                                 <th class="text-center px-4 py-3">Actions</th>
                             </tr>
                         </thead>
@@ -85,6 +86,7 @@ $headerActions = '';
 <?php require __DIR__ . '/../templates/super_layout_bottom.php'; ?>
 <?php require __DIR__ . '/../templates/student_profile_modal.php'; ?>
 <?php require __DIR__ . '/../templates/address_modal.php'; ?>
+<?php require __DIR__ . '/../templates/student_certificate_modal.php'; ?>
 <script src="js/api.js"></script>
 <script src="js/toast.js"></script>
 <script src="js/shared.js"></script>

@@ -32,9 +32,8 @@ $statsStmt = $pdo->prepare(
             SUM((" . FEE_STATUS_SQL . ") = 'Partial') AS partial,
             SUM((" . FEE_STATUS_SQL . ") = 'Pending') AS overdue,
             COALESCE(SUM(" . FEE_PAID_SQL . "), 0) AS collected,
-            COALESCE(SUM(GREATEST(c.total_fee - " . FEE_PAID_SQL . ", 0)), 0) AS pending
+            COALESCE(SUM(GREATEST(s.total_fee - " . FEE_PAID_SQL . ", 0)), 0) AS pending
      FROM students s
-     JOIN courses c ON c.id = s.course_id
      " . FEE_JOIN_SQL . "
      WHERE s.course_id = :course_id"
 );
