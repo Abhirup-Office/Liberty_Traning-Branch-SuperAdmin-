@@ -1,0 +1,39 @@
+# The whole project directory is the Apache docroot (there is no separate public/ vhost
+# root — see uploads/.htaccess for the same note), so without this, files that were never
+# meant to be served over HTTP are directly downloadable by anyone who requests them: the
+# database schema/seed dump, Composer's dependency manifest, and backup/log files. The
+# actual application lives entirely under public/, student/ and api/, none of which this
+# touches.
+#
+# This file sits at the document root, so it is parsed for EVERY request on the site —
+# unlike uploads/.htaccess, a syntax this host's Apache doesn't understand here would break
+# the entire application, not just one subdirectory. Both the modern (2.4) and legacy (2.2)
+# access-control syntaxes are provided via <IfModule> guards so this degrades safely instead
+# of causing a 500 error if a module isn't loaded.
+<IfModule mod_authz_core.c>
+    <FilesMatch "\.(sql|md|log|lock|bak|env)$">
+        Require all denied
+    </FilesMatch>
+    <FilesMatch "^composer\.(json|lock)$">
+        Require all denied
+    </FilesMatch>
+</IfModule>
+<IfModule !mod_authz_core.c>
+    <FilesMatch "\.(sql|md|log|lock|bak|env)$">
+        Order allow,deny
+        Deny from all
+    </FilesMatch>
+    <FilesMatch "^composer\.(json|lock)$">
+        Order allow,deny
+        Deny from all
+    </FilesMatch>
+</IfModule>
+
+# Clean URL: /login shows and works exactly like /public/login.php, without the browser's
+# address bar ever showing the real path. This rewrites the request internally — it is not a
+# redirect, so the URL in the address bar stays as /login. The real path (/public/login.php)
+# keeps working too; nothing that already links to it needs to change.
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^login/?$ public/login.php [L]
+</IfModule>
